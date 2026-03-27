@@ -12,6 +12,8 @@ Time passed, and this repository needs maintenance work, such as:
 * Fetch updates from facebook/yoga repo
 
 If you find this repository useful, think about contributing. 
+
 If you want to submit a breaking change please first fire an [issue](https://github.com/antokhio/YogaSharp/issues).
+
 
 Contributions are welcome. 
