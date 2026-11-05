@@ -142,10 +142,7 @@ public enum YGUnit
     Undefined,
     Point,
     Percent,
-    Auto,
-    MaxContent,
-    FitContent,
-    Stretch
+    Auto
 }
 
 public enum YGWrap

@@ -2,7 +2,7 @@
   <PropertyGroup>
     <AssemblyName>YogaSharp</AssemblyName>
     <PackageId>antokhio.YogaSharp</PackageId>
-    <Version>1.1.3</Version>
+    <version>1.2.0</version>
     <Authors>Haselnussbomber, antokhio</Authors>
     <PackageProjectUrl>https://github.com/antokhio/YogaSharp</PackageProjectUrl>
     <RepositoryUrl>https://github.com/antokhio/YogaSharp.git</RepositoryUrl>

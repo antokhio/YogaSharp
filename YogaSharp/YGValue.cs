@@ -77,7 +77,7 @@ public struct YGValue
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public override bool Equals([NotNullWhen(true)] object? obj)
     {
-        return obj is YGValue other && Unit == other.Unit && (Unit is YGUnit.Undefined or YGUnit.Auto or YGUnit.FitContent or YGUnit.MaxContent or YGUnit.Stretch || Value == other.Value);
+        return obj is YGValue other && Unit == other.Unit && (Unit is YGUnit.Undefined or YGUnit.Auto || Value == other.Value);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
