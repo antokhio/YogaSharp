@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
   <metadata>
     <id>antokhio.YogaSharp</id>
-    <version>1.1.3</version>
+    <version>1.2.0</version>
     <title>antokhio.YogaSharp</title>
     <authors>Haselnussbomber, antokhio</authors>
     <owners>antokhio</owners>
