@@ -1,51 +1,78 @@
-name: Push Release Nuget
+name: Release NuGet
 
 on:
   push:
-    branches:
-      - main
-    paths-ignore:
-      - .editorconfig
-      - .gitattributes
-      - .github/**
-      - .gitignore
-      - LICENSE
-      - README.md
-  workflow_dispatch:
+    tags: ["v*"]
+  workflow_dispatch: # must be run against a tag (select the tag in "Use workflow from")
 
 jobs:
-  build:
-    name: Build
+  release:
+    name: Build & Publish
     runs-on: windows-latest
+    permissions:
+      contents: write # create/update the GitHub release
+      id-token: write # NuGet trusted publishing (OIDC)
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
 
+      - name: Extract version and detect pre-release
+        run: |
+          if ("${{ github.ref_type }}" -ne "tag" -or "${{ github.ref_name }}" -notmatch '^v(\d+\.\d+\.\d+([\-+].+)?)$') {
+            Write-Error "Release must run on a tag like v1.2.3 or v1.2.3-beta.1 (got '${{ github.ref_name }}')."
+            exit 1
+          }
+          $version = $Matches[1]
+          $isPrerelease = $version -match '[\-+]'
+          echo "VERSION=$version" >> $env:GITHUB_ENV
+          echo "IS_PRERELEASE=$isPrerelease" >> $env:GITHUB_ENV
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
+          dotnet-version: "8.x"
           cache: true
           cache-dependency-path: YogaSharp/packages.lock.json
+
+      - name: Setup NuGet.exe
+        uses: nuget/setup-nuget@v2
 
       - name: Build Yoga
         run: |
           git apply --ignore-whitespace shared-build.patch
-          cd yoga
-          mkdir build
-          cd build
-          cmake ..
-          cmake --build yoga --config Release
-          cd ../..
+          cmake -S yoga -B yoga/build
+          cmake --build yoga/build --target yogacore --config Release
 
-      - name: Restore dependencies
-        run: dotnet restore --locked-mode
+      - name: Build YogaSharp
+        run: |
+          dotnet restore --locked-mode
+          dotnet build YogaSharp\YogaSharp.csproj --no-restore --configuration Release -p:Version=${{ env.VERSION }}
 
       - name: Pack
-        run: dotnet pack --no-restore
+        run: nuget pack .nuget\antokhio.YogaSharp.nuspec -Version ${{ env.VERSION }} -OutputDirectory .\packages
 
-      - name: Publish VL Nuget
-        uses: vvvv/PublishVLNuget@1.0.29
+      - name: NuGet login (OIDC)
+        uses: NuGet/login@v1
+        id: nuget-login
         with:
-          nuspec: .nuget\antokhio.YogaSharp.nuspec
-          nuget-key: ${{ secrets.NUGET_KEY }}
+          user: ${{ secrets.NUGET_USER }}
+
+      - name: Publish to NuGet.org
+        run: |
+          foreach ($package in Get-ChildItem -Path .\packages -Filter *.nupkg) {
+            dotnet nuget push $package.FullName `
+              --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }} `
+              --source https://api.nuget.org/v3/index.json `
+              --skip-duplicate
+          }
+
+      - name: GitHub release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: packages/*.nupkg
+          generateReleaseNotes: true
+          allowUpdates: true
+          omitBodyDuringUpdate: true
+          prerelease: ${{ env.IS_PRERELEASE == 'True' }}
+          token: ${{ secrets.GITHUB_TOKEN }}
